@@ -13,6 +13,7 @@ mix.setPublicPath('./')
     .copy('assets/manifest.json', 'dist')
     .js('assets/js/background.js', 'dist/js')
     .js('assets/js/utils.js', 'dist/js')
+    .js('assets/js/composables/*.js', 'dist/js')
     .js('assets/js/sidepanel.js', 'dist/js').vue()
     .options({
         processCssUrls: false

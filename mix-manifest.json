@@ -1,6 +1,7 @@
 {
     "/dist/js/background.js": "/dist/js/background.js",
     "/dist/js/utils.js": "/dist/js/utils.js",
+    "/dist/js/auth.js": "/dist/js/auth.js",
     "/dist/js/sidepanel.js": "/dist/js/sidepanel.js",
     "/dist/css/sidepanel.css": "/dist/css/sidepanel.css",
     "/dist/images/icog_action_icon_128x128.png": "/dist/images/icog_action_icon_128x128.png",

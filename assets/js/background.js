@@ -14,6 +14,17 @@ const Endpoints = {
 let current_page = null
 
 
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    
+    if (message.name === 'refresh-bookmarks') {
+        console.log('refresh-bookmarks message received ', message.user_id)
+        refreshBookmarksCache(message.user_id)
+        sendResponse({ status: 'ok' })
+    }
+})
+
+
 chrome.storage.onChanged.addListener((changes, namespace) => {
     for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
         
@@ -244,9 +255,20 @@ async function searchBookmarksByUrl(url) {
     return found
 }
 
+const badgeOn = (tabId) => {
+    chrome.action.setBadgeBackgroundColor(
+        {color: 'rgba(22, 169, 32, 1)'},  // Also green
+        () => { /* ... */ },
+    );
+      
+    chrome.action.setBadgeText({ text: '✔' , tabId: tabId });
+}
+
+
 
 // Detect changes in active tab
 chrome.tabs.onActivated.addListener(async (tab) => { 
+    
 
     console.log('tabs.onActivated', tab.tabId)
     const { path } = await chrome.sidePanel.getOptions({ tabId: tab.tabId });
@@ -256,6 +278,7 @@ chrome.tabs.onActivated.addListener(async (tab) => {
         const bookmark = await searchBookmarksByUrl(tabs[0].url)
         if (bookmark != undefined) {
             console.log('tabs.onActivated -> found: ', bookmark)
+            badgeOn(tab.tabId)
             renderDocument(bookmark.id)
         } else {
             console.log('tabs.onActivated -> bookmark not found')

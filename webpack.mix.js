@@ -8,10 +8,12 @@ mix.env(process.env.ENV_FILE);
 
 mix.setPublicPath('./')
     .css('assets/css/popup.css', 'dist/css')
+    .css('assets/css/content-script.css', 'dist/css')
     .copy('assets/images', 'dist/images')
     .copy('assets/popup.html', 'dist')
     .copy('assets/manifest.json', 'dist')
     .js('assets/js/background.js', 'dist/js')
+    .js('assets/js/content-script.js', 'dist/js')
     .js('assets/js/utils.js', 'dist/js')
     .js('assets/js/popup.js', 'dist/js').vue()
     .options({

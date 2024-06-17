@@ -195,6 +195,16 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
   }
 });
 
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('Popup listerner', request)
+    if (request.name === 'highlight-sentences') {
+        console.log('Contect-script', request.data)
+        const sentences = request.data
+        sendResponse({status: 'ok'})
+    }
+    return true
+})
+
 
 //Methods to handle events
 const handleBookmark = async () => {

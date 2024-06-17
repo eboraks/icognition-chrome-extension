@@ -9,7 +9,8 @@ const Endpoints = {
     regenrate: '/document/regenerate',
     document_plus: '/document_plus/{ID}',
     user_bookmarks: '/bookmarks/user/{ID}',
-    user_bookmark: '/bookmark/user'
+    user_bookmark: '/bookmark/user',
+    bookmark_key_sentences: '/bookmark/{ID}/keysentences',
 }
 
 // Listen to changes in storage and if session_user changes, refresh the bookmarks cache, or delete the cache if the user logs out
@@ -208,41 +209,53 @@ const fetchDocument = async (bookmark_id) => {
 // Listen from popup to fetch document
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.name === 'fetch-document') {
-        console.log('background.js got message. Fetch Document for bookmark_id: ', request.bookmark_id)
+       
+        highlight_sentences(request.bookmark_id)
         fetchDocument(request.bookmark_id).then((doc) => {
             console.log('fetchDocument -> response: ', doc)
             sendResponse({ document: doc })
         })
         return true
     }
-
 })
 
+const runContentScript = async () => {
+
+    let tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
+    let tab = tabs[0]
+  
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["js/content-script.js"],
+      });
+  }
 
 
-
-function renderDocument(bookmark_id) {
+async function highlight_sentences(bookmark_id) {
     /*
     * Fetch document from server with a retry fetch.
     * The reason for the retry fetch is that the server may not have the document ready while
     * LLM is still processing the document.
     * Send document to side panel to render. 
     */
-    
+    console.log('highlight_sentences -> bookmark_id: ', bookmark_id)
+    const [tab] = await chrome.tabs.query({active: true, lastFocusedWindow: true});
     let attempts = 30
-    const url = `${base_url}${Endpoints.document_plus.replace('{ID}', bookmark_id)}`
+    const url = `${base_url}${Endpoints.bookmark_key_sentences.replace('{ID}', bookmark_id)}`
     const options = { method: 'GET', headers: {'Accept': 'application/json','Content-Type': 'application/json',}}
+    //await runContentScript()
 
-    fetch_retry(url, options, attempts).then((document) => {
-        console.log('getDocument -> response: ', document)
-        console.timeEnd('getDocument')
-            sendDocumentToSidePanel(document).then((response) => {          
-                console.log('renderDocument -> response: ', response)
-            })
-            
+    fetch_retry(url, options, attempts).then((res) => {
+        console.log('highlight_sentences -> tab.id: ', tab.id)
+   
+        
+        /* chrome.tabs.sendMessage(tab.id, { name: 'highlight-sentences', data: res }).then((response) => {
+            console.log('highlight sendMessage -> response: ', response)
+        }) */
+        
     })
     .catch((error) => {
-        console.log('getDocument -> error: ', error)
+        console.log('highlight_sentences -> error: ', error)
         renderError(error)
     })
 }

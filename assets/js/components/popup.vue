@@ -69,7 +69,7 @@ const bookmark_status = ref("Add to iCognition")
 const doc_status = ref(null)
 const document = ref(null)
 const debug_mode = ref(true)
-const library_url = ref('http://localhost:8080')
+const library_url = ref('http://localhost:8080/library')
 
 // Send message to background.js asking if server is running
 if (server_status.value === false) {

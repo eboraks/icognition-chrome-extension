@@ -17,6 +17,18 @@ export function caspitalFirstLetter(string) {
 }
 
 
+export const CommunicationEnum = {
+    NEW_DOC: "new-doc",
+    NEW_QANDA: "new-qanda",
+    DOC_IN_PROGRESS: "doc-in-progress",
+    ADD_BOOKMARK: "add-bookmark",
+    ASK_QUESTION: "ask-question",
+    FETCH_QANDA: "fetch-qanda",
+    ASK_QANDA: "ask-qanda",
+    DELETE_QANDA: "delete-qanda",
+    PROGRESS_PERCENTAGE: "progress_percentage",
+};
+
 export function cleanUrl(url) {
     url = decodeURIComponent(url);
     // Define the regex

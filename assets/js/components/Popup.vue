@@ -72,14 +72,10 @@ const doc = ref(null)
 const qanda = ref(null)
 const qanda_status = ref(null)
 const debug_mode = ref(true)
-<<<<<<< HEAD:assets/js/components/popup.vue
-const library_url = ref('http://localhost:8080/library')
-=======
 const library_url = ref(process.env.MIX_ICOGNITION_APP_URL)
 const progressPercent = ref(0) 
 
 
->>>>>>> Jan_8_save:assets/js/components/Popup.vue
 
 // Send message to background.js asking if server is running
 if (server_status.value === false) {

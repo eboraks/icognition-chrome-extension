@@ -72,7 +72,7 @@ const doc = ref(null)
 const qanda = ref(null)
 const qanda_status = ref(null)
 const debug_mode = ref(true)
-const library_url = ref('http://localhost:8080')
+const library_url = ref(process.env.MIX_ICOGNITION_APP_URL)
 const progressPercent = ref(0) 
 
 

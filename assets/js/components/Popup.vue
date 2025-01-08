@@ -1,5 +1,5 @@
 <template>
-    <div style="width: 350px; height: 100px">        
+    <div style="width: 450px; height: 200px">        
         <div class="header">
             <img src="images/icognition_logo_sidepanel.png" alt="iCognition Logo"  width="150px">
             <img class="logout_icon" src="images/icons8-logout-48.png" width="35px" alt="Logout" v-if="user !== null" @click="handleSignOut">
@@ -13,42 +13,39 @@
             <p class="error">Error connecting to server</p>
         </div>
 
-        <div v-if = "doc_status == 'ready' && user != null">
-            <div class="answer_container">
-                <p>{{document.is_about}}</p>
-                <p>The key points are:</p>
-                <ul class="" v-for="point in document.tldr">
-                    <li>{{ point }}</li>
-                </ul>
-            </div>
+
+        <div v-if="progressPercent > 0 && progressPercent < 100">
+            <ProgressBar :value="progressPercent"></ProgressBar>
         </div>
 
+        <div v-if="doc_status === 'processing' && user != null" class="flex flex-column">
+            <Skeleton class='mb-2'></Skeleton>
+            <Skeleton width="20rem" class='mb-2'></Skeleton>
+            <Skeleton class='mb-2'></Skeleton>
+            <Skeleton width="25rem" class='mb-2'></Skeleton>
+            <Skeleton class='mb-2'></Skeleton>
+            <Skeleton width="20rem" class='mb-2'></Skeleton>
+            <Skeleton class='mb-2'></Skeleton>
+            <Skeleton width="30rem" class='mb-2'></Skeleton>
+            <Skeleton class='mb-2'></Skeleton>
+            <Skeleton width="20rem" class='mb-2'></Skeleton>
+        </div>
+
+
+        <div v-if = "doc_status == 'ready' && user != null">
+            <DocSummary :doc="doc"></DocSummary>
+        </div>
         <div v-if="server_status =='up'" class="">
             <div v-if="user === null" class="button_container">
-                <label class="btn"  @click="handleSignIn">Google Sign-on</label>
+                <div class="login-with-google-btn" @click="handleSignIn">Google Sign-on</div>
             </div>
 
-            <div v-if="user !== null" class="button_container" >
-                <label class="btn" v-if = "!bookmark" @click="handleBookmark">{{ bookmark_status}}</label>
-                <label class="btn" style="background-color: green" v-if="bookmark" @click="handleRegenerateDocument">{{ bookmark_status }}</label>       
-            </div>
         </div>
         <div v-if="error_bookmark" class="message_container">
             <p class="error">{{ error_bookmark }}</p>
         </div>
-        <div v-if="doc_status === 'processing'">
-            <p class="loading">Processing...</p>
-        </div>
         <a :href="library_url" target="_blank" class="">Go to iCognition Library</a>
         
-        <div v-if="debug_mode" class="debug">
-            <p>Server status: {{ server_status }}</p>
-            <p v-if="user">User: {{ user.uid }}</p>
-            <p v-if="bookmarks">Bookmarks: {{ bookmarks.length }}</p>
-            <p>Document: {{ document }}</p>
-            <p>Active Tab: {{ active_tab }}</p>
-            <p>Error Bookmar: {{ error_bookmark }}</p>
-        </div>
     </div>
 
         
@@ -56,7 +53,11 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import useAuth from '../composables/useAuth.js';
-import { cleanUrl } from '../utils.js'
+import { cleanUrl, CommunicationEnum } from '../utils.js';
+import Button from 'primevue/button';
+import DocSummary from './DocSummary.vue';
+import ProgressBar from 'primevue/progressbar';
+import Skeleton from 'primevue/skeleton';
 
 const { auth_error, user, handleSignIn, handleSignOut } = useAuth()
 
@@ -67,9 +68,18 @@ const active_tab = ref(null)
 const error_bookmark = ref(null)
 const bookmark_status = ref("Add to iCognition")
 const doc_status = ref(null)
-const document = ref(null)
+const doc = ref(null)
+const qanda = ref(null)
+const qanda_status = ref(null)
 const debug_mode = ref(true)
+<<<<<<< HEAD:assets/js/components/popup.vue
 const library_url = ref('http://localhost:8080/library')
+=======
+const library_url = ref(process.env.MIX_ICOGNITION_APP_URL)
+const progressPercent = ref(0) 
+
+
+>>>>>>> Jan_8_save:assets/js/components/Popup.vue
 
 // Send message to background.js asking if server is running
 if (server_status.value === false) {
@@ -81,6 +91,7 @@ if (server_status.value === false) {
 
 chrome.tabs.query({ active: true, lastFocusedWindow: true }).then((tabs) => {
     active_tab.value = tabs[0]
+    console.log('Popup -> active_tab:', active_tab.value)
 })
 
 
@@ -93,7 +104,13 @@ chrome.storage.session.get(["session_user"]).then((session_user) => {
         //Note: the the if bookmark isn't found in local storage, the server will be called
         //to create a bookmark. If the bookmark exists on the server, it will be returned. 
         //This behaviour create bookmark on action button click. 
-        searchBookmarksByUrl(active_tab.value.url)
+        chrome.tabs.query({ active: true, lastFocusedWindow: true }).then((tabs) => {
+            active_tab.value = tabs[0]
+            console.log('Popup -> Session_User -> active_tab:', active_tab.value)
+            searchBookmarksByUrl(active_tab.value.url)
+        })
+
+        
     } else {
         console.log('sidepanel -> no user found in session storage!')
     }
@@ -140,43 +157,74 @@ const searchBookmarksByUrl = async (url) => {
     }
 
     const value = await chrome.storage.local.get(["bookmarks"]);
+    console.log('searchBookmarksByUrl -> url:', url)
     console.log('searchBookmarksByUrl -> value: ', value)
+
+
+    // Remove null and undefined values from bookmarks array
+    if (value.bookmarks) {
+        value.bookmarks = value.bookmarks.filter(bookmark => bookmark != null && bookmark !== undefined);
+    }
 
     if (value.bookmarks) {
         //Search local storage for bookmarks, if not found, call server
-        const found = value.bookmarks.find(bookmark => bookmark.url == cleanUrl(url));
-        if (!found) {
-            console.log('searchBookmarksByUrl -> no bookmarks found in local storage, calling server')
-            //If no bookmarks found in local storage, call server to create a bookmark, if the bookmark exists
-            // on the server, it will respond with the bookmark object
+        let found;
+        try {
+            found = value.bookmarks.find(bookmark => bookmark.url == cleanUrl(url));
+
+            if (!found) {
+                console.log('searchBookmarksByUrl -> no bookmarks found in local storage, calling server')
+                //If no bookmarks found in local storage, call server to create a bookmark, if the bookmark exists
+                // on the server, it will respond with the bookmark object
+                await handleBookmark()
+                return
+            } else {
+                console.log('searchBookmarksByUrl -> found:', found)
+                bookmark_status.value = 'Regenerate Summary'
+                bookmark.value = found
+
+                //Fetch document from server
+                fetchDocument(bookmark.value.id)
+                return
+            }
+
+
+        } catch (error) {
+            console.error('Error searching bookmarks by URL:', error);
+            error_bookmark.value = 'Error searching bookmarks';
             await handleBookmark()
-            return
-        } else {
-            console.log('searchBookmarksByUrl -> found:', found)
-            bookmark_status.value = 'Regenerate Summary'
-            bookmark.value = found
-            return
+            return;
         }
+        
     } 
     
 }
 
 
-watch(bookmark, (beforeBookmark, afterBookmark) => {
-    console.log('Popup -> bookmark changed: ', bookmark.value.id)
-    if (bookmark.value.id) {
-        chrome.runtime.sendMessage({ name: 'fetch-document', bookmark_id: bookmark.value.id }).then((response) => {
-            console.log('Popup -> fetch-document response:', response)
-            if (response.document) {
-                document.value = response.document
-                doc_status.value = 'ready'
-            } else {
-                doc_status.value = 'processing'
-            }
-            
-        })
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+    console.log('Popup -> onMessage:', request.name)
+    
+    if (request.name === CommunicationEnum.NEW_DOC) {
+        console.log('Popup -> new document:', request)
+        doc_status.value = 'ready'
+        doc.value = JSON.parse(request.data)
+    }
+
+    if (request.name === CommunicationEnum.NEW_QANDA) {
+        console.log('Popup -> new qanda:', request)
+        qanda_status.value = 'ready'
+        qanda.value = JSON.parse(request.data)
+        console.log('Popup -> qanda:', qanda.value)
+    }
+
+    if (request.name === CommunicationEnum.PROGRESS_PERCENTAGE) {
+        progressPercent.value += request.data
     }
 })
+
+
+
 
 //Listen for changes in bookmarks storage and update ref accordingly
 chrome.storage.onChanged.addListener((changes, namespace) => {
@@ -209,6 +257,14 @@ const handleBookmark = async () => {
             bookmark.value = response.content
             bookmark_status.value = 'bookmark_added'
             doc_status.value = 'processing'
+        } else if (response.status === 200) {
+            console.log('handleBookmark -> bookmark:', response.content)
+            bookmark.value = response.content
+            bookmark_status.value = 'bookmark_exists'
+
+            fetchDocument(bookmark.value.id)
+
+            
         } else if (response.status >= 400) {
             bookmark_status.value = 'error'
             error_bookmark.value = response.content
@@ -223,17 +279,28 @@ const handleBookmark = async () => {
 //Regenerate document
 const handleRegenerateDocument = async () => {
     doc_status.value = 'processing'
-    console.log('handleRegenerateDocument -> document title:', document.value.title)
+    console.log('handleRegenerateDocument -> document title:', doc.value.title)
     let tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
     chrome.runtime.sendMessage({
-            name: 'regenerate-document', tab: tabs[0], document: document.value
+            name: 'regenerate-document', tab: tabs[0], document: doc.value
         }).then((response) => {
             console.log('handleRegenerateDocument -> response:', response)
         })
 }
 
 
-
+const fetchDocument = async (bookmark_id) => {
+    console.log('fetchDocument -> bookmark_id:', bookmark_id)
+    chrome.runtime.sendMessage({ name: 'fetch-document', bookmark_id: bookmark_id }).then((response) => {
+        console.log('Popup -> fetch-document response:', response)
+        if (response.document) {
+            doc.value = response.document
+            doc_status.value = 'ready'
+        } else {
+            doc_status.value = 'processing'
+        }
+    })
+}
 
 
 chrome.runtime.onMessage.addListener(
@@ -242,9 +309,16 @@ chrome.runtime.onMessage.addListener(
         if (request.name === 'error-bookmarking') {
             console.log('error-bookmarking -> request', request)
             doc_status.value = 'error'
-            document.value = null
+            doc.value = null
             error_bookmark.value = request.data
             sendResponse({ message: 'bookmark-page recived' })
+        }
+
+        if (request.name === 'question-answers-ready') {
+            console.log('document-ready -> request', request)
+            doc.value = request.data
+            doc_status.value = 'ready'
+            sendResponse({ message: 'document-ready recived' })
         }
 }); 
 

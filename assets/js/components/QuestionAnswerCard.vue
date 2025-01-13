@@ -36,8 +36,7 @@
 <script setup lang="js">
     import moment from 'moment';
     import { computed } from 'vue';
-import { CommunicationEnum } from '../utils';
-
+    import { CommunicationEnum } from '../utils';
 
 
     const props = defineProps({ qanda: { type: Object, required: true }, uuid: { type: String, required: true } });

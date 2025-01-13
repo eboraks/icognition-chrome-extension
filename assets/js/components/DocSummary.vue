@@ -8,7 +8,7 @@
                     <Skeleton width="5rem" class='mb-2'></Skeleton>
                 </div>
 
-                <div v-else class="flex-column mx-2 my-2 mt-3 w-full border-round border-2 border-blue-100 bg-white">
+                <div v-else class="flex-column w-full border-round border-2 border-blue-100 bg-white">
                     <div class="overflow-y-auto pr-3 py-3" style="height: calc(100% - 49.6px);">
                     <p class="pl-3 pb-3 line-height-2" v-if="doc != null && doc.is_about != null">{{ doc.is_about }}</p>
                     <div v-if="doc != null && doc.tldr != null">
@@ -21,7 +21,7 @@
                 </div>
             </TabPanel>
             <TabPanel header="Ask iCongition">
-                <div class="pr-3 py-3" style="height: calc(100% - 49.6px);">
+                <div style="height: calc(100% - 2.75em);">
                     <div v-if="qanda_status == 'ready'">
                         <div v-for="item in qanda" :key="item.id">
                             <QuestionAnswerCard :qanda="item" :uuid="item.uuid" @remove="handleQandARemove"/>
@@ -30,9 +30,9 @@
                         <div v-if="processing_question">
                             <div>Loading...</div>
                         </div>
-                        <div v-else ref="ask_question_input" class="flex flex-row m-2 p-2 pr-0 bg-white">
-                            <InputText @keyup.enter="handleAsk" class="flex p-1 m-2 w-10" type="text" v-model="question" />
-                            <div class="flex m-2 p-2 bg-primary-500 border-round" label="Ask" @click="handleAsk">Ask</div>
+                        <div v-else ref="ask_question_input" class="flex p-2 bg-white border-top-1 border-300" style="height: 2.75em;">
+                            <InputText @keyup.enter="handleAsk" class="flex-grow-1 p-1" type="text" v-model="question" />
+                            <Button class="flex-shrink-0 px-3 py-1 ml-1 bg-primary-500 text-white" icon="pi pi-arrow-right" @click="handleAsk" />
                         </div>
                     </div>
                 
